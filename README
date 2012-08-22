@@ -1,7 +1,8 @@
-Light weight version of Fleet running in Meteor JS
+# Fleet running on Meteor
 
-Readme text goes here
+###Additional Node Packages
+* colors
 
-Collaborators:
-kerv
-rpwjanzen
+### Contributors
+* kerv (kerv)
+* rpwjanzen (Ryan Janzen)

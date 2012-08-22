@@ -1,9 +1,20 @@
 var require = __meteor_bootstrap__.require,
     net = require('net'),
+    colors = require('colors'),
     //port = 2001,
     //host = "172.23.45.67";
     port = 2002,
     host = "172.23.45.16";
+
+colors.setTheme({
+  info: 'green',
+  data: 'grey',
+  help: 'cyan',
+  warn: 'yellow',
+  debug: 'blue',
+  error: 'red'
+});
+
     
 var SOH_LENGTH_STX_SIZE = 1+4+1;
 var TAG_INDEX = 6;
@@ -19,9 +30,9 @@ var socket = net.createConnection(port, host);
 console.log('Socket created.');
 socket.on('data', function(data) {
 
-  console.log('\n--------------------------------------------------------------');    
+  logger('XGate:'.data, '\n--------------------------------------------------------------');    
   // Log the response from the server.
-  console.log('RESPONSE: ' + data);
+  logger('XGate:'.data, 'RESPONSE: ' + data);
   
   // TODO: data is an array - read stuff from it according to the XGate protocol spec
     // <summary>
@@ -51,31 +62,31 @@ socket.on('data', function(data) {
     var tagResults = decodeNext(data, currentIndex, ETX);
     var tag = tagResults.result;
     currentIndex = tagResults.currentIndex;
-    console.log('\nTAG: ' + tag);
+    logger('XGate'.data, 'TAG: ' +tag);
     var typeResults = decodeNext(data, currentIndex, ETX);
     var type = typeResults.result;
     currentIndex = typeResults.currentIndex;
-    console.log('TYPE: ' + type);
+    logger('XGate'.data, 'TYPE: ' + type);
     var statusResults = decodeNext(data, currentIndex, ETX);
     var status = statusResults.result;
     currentIndex = statusResults.currentIndex;
-    console.log('STATUS: ' + status);    
+    logger('XGate'.data, 'STATUS: ' + status);    
     var timeResults = decodeNext(data, currentIndex, ETX);
     var time = timeResults.result;
     currentIndex = timeResults.currentIndex;
-    console.log('TIME: ' + time);    
+    logger('XGate'.data, 'TIME: ' + time);    
     var networkIDResults = decodeNext(data, currentIndex, ETX);
     var networkID = networkIDResults.result;
     currentIndex = networkIDResults.currentIndex;
-    console.log('NETWORKID: ' + networkID);    
+    logger('XGate'.data, 'NETWORKID: ' + networkID);    
     var formNumResults = decodeNext(data, currentIndex, ETX);
     var formNum = formNumResults.result;
     currentIndex = formNumResults.currentIndex;
-    console.log('FORM NUM: ' + formNum);    
+    logger('XGate'.data, 'FORM NUM: ' + formNum);    
     var formSizeResults = decodeNext(data, currentIndex, ETX);
     var formSize = formSizeResults.result;
     currentIndex = formSizeResults.currentIndex;
-    console.log('FORM SIZE: ' + formSize);    
+    logger('XGate'.data, 'FORM SIZE: ' + formSize);    
     
     var fields = new Array();
     
@@ -87,7 +98,7 @@ socket.on('data', function(data) {
       var fieldDataResults = decodeNext(data, currentIndex, ETX);
       var fieldData = fieldDataResults.result;
       currentIndex = fieldDataResults.currentIndex;
-      console.log('Field: ' + fieldIndex + ' Data: ' + fieldData);
+      logger('XGate'.data, 'Field: ' + fieldIndex + ' Data: ' + fieldData);
       fields[fieldIndex] = fieldData;
     }
    
@@ -143,4 +154,11 @@ function decodeNext(data, index, seperator)
   newIndex = index;  
   
   return { result: decodeResult, currentIndex: newIndex };
+}
+
+function logger(title, message) {
+    while (title.length < 26) {
+        title = title + ' ';
+    }
+    console.log(title + message);
 }
