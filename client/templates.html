@@ -1,0 +1,24 @@
+<template name="vehicles">
+<h3>Vehicles</h3>
+  <div id="vehicles">
+    {{#each vehicles}}
+      <div class="vehicle {{selected}}">
+          <div class="display">
+            <div class="vehicle-name {{name_class}}">
+              {{name}}
+            </div>
+            <div class="vehicle-lat {{name_class}}">
+              {{lat}}
+            </div>
+            <div class="vehicle-lon {{name_class}}">
+              {{lon}}
+            </div>    
+            <div class="vehicle-time {{name_class}}">
+              {{time}}
+            </div>                                   
+          </div>
+      </div>
+      <p />
+    {{/each}}
+  </div>
+</template>
