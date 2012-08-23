@@ -15,6 +15,36 @@ colors.setTheme({
   error: 'red'
 });
 
+/*
+// Connects to MSSQL database.
+// Query with explicit connection
+var sql = require('node-sqlserver');
+
+// Requires that you have a ODBC connection setup.
+var conn_str = 
+    "DSN=TheDsn;" +
+    "UID=TheUsername;" +
+    "PWD=ThePassword;" +
+    "DATABASE=TheDatabase";
+    
+sql.open(conn_str, function (err, conn) {
+    if (err) {
+        console.log("Error opening the connection: " + err);
+        return;
+    }
+    console.log("Running query...");
+    conn.queryRaw("SELECT FirstName, LastName FROM Employee", function (err, results) {
+        if (err) {
+            console.log("Error running query: " + err);
+            return;
+        }
+        console.log("Running query finished.");
+        for (var i = 0; i < results.rows.length; i++) {
+            console.log("FirstName: " + results.rows[i][0] + " LastName: " + results.rows[i][1]);
+        }
+    });
+});
+*/
     
 var SOH_LENGTH_STX_SIZE = 1+4+1;
 var TAG_INDEX = 6;

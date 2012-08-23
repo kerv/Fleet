@@ -1,7 +1,8 @@
 # Fleet running on Meteor
 
-###Additional Node Packages
+### Additional Node Packages
 * colors
+* node-sqlserver
 
 ### Contributors
 * kerv (kerv)
