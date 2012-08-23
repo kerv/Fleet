@@ -56,13 +56,13 @@ var EOT = 0x04;
 var BBX = "BBX"; 
 
 var socket = net.createConnection(port, host);
+logger('XGate'.info, 'Socket created.');
 
-console.log('Socket created.');
 socket.on('data', function(data) {
 
-  logger('XGate:'.data, '\n--------------------------------------------------------------');    
+  logger('XGate'.data, '\n--------------------------------------------------------------');    
   // Log the response from the server.
-  logger('XGate:'.data, 'RESPONSE: ' + data);
+  logger('XGate'.data, 'RESPONSE: ' + data);
   
   // TODO: data is an array - read stuff from it according to the XGate protocol spec
     // <summary>
@@ -93,33 +93,38 @@ socket.on('data', function(data) {
     var tag = tagResults.result;
     currentIndex = tagResults.currentIndex;
     logger('XGate'.data, 'TAG: ' +tag);
+    
     var typeResults = decodeNext(data, currentIndex, ETX);
     var type = typeResults.result;
     currentIndex = typeResults.currentIndex;
     logger('XGate'.data, 'TYPE: ' + type);
+    
     var statusResults = decodeNext(data, currentIndex, ETX);
     var status = statusResults.result;
     currentIndex = statusResults.currentIndex;
     logger('XGate'.data, 'STATUS: ' + status);    
+    
     var timeResults = decodeNext(data, currentIndex, ETX);
     var time = timeResults.result;
     currentIndex = timeResults.currentIndex;
     logger('XGate'.data, 'TIME: ' + time);    
+    
     var networkIDResults = decodeNext(data, currentIndex, ETX);
     var networkID = networkIDResults.result;
     currentIndex = networkIDResults.currentIndex;
     logger('XGate'.data, 'NETWORKID: ' + networkID);    
+    
     var formNumResults = decodeNext(data, currentIndex, ETX);
     var formNum = formNumResults.result;
     currentIndex = formNumResults.currentIndex;
     logger('XGate'.data, 'FORM NUM: ' + formNum);    
+    
     var formSizeResults = decodeNext(data, currentIndex, ETX);
     var formSize = formSizeResults.result;
     currentIndex = formSizeResults.currentIndex;
     logger('XGate'.data, 'FORM SIZE: ' + formSize);    
     
-    var fields = new Array();
-    
+    var fields = [];
     for (var i = 0; i < formSize; i++)
     {
       var fieldIndexResults = decodeNext(data, currentIndex, ETX);
@@ -129,6 +134,7 @@ socket.on('data', function(data) {
       var fieldData = fieldDataResults.result;
       currentIndex = fieldDataResults.currentIndex;
       logger('XGate'.data, 'Field: ' + fieldIndex + ' Data: ' + fieldData);
+      
       fields[fieldIndex] = fieldData;
     }
    
@@ -142,7 +148,6 @@ socket.on('data', function(data) {
       var lat = fields[149].replace(" ",""); 
     
       Fiber(function() {
-      
         vehiclesMatched = Vehicles.findOne({name: networkID});
         if (vehiclesMatched != null)
         {
@@ -160,30 +165,25 @@ socket.on('data', function(data) {
     }
   
 }).on('connect', function() {
-  // Write something back to the host?
-  //socket.write("GET / HTTP/1.0\r\n\r\n");
+    logger('XGate'.info, 'Connected to XGate server.');
 }).on('end', function() {
-  console.log('DONE');
+    logger('XGate'.info, 'Diconnected from XGate server');
 });
 
-function decodeNext(data, index, seperator)
-{
-  var decodeResult = "";
-  var newIndex = index;
+function decodeNext(data, index, seperator) {
+    var decodeResult = "";
+    var offset = 0;
   
-  while(true)
-  {
-    var byteData = data[index];
-    index++;
-    if (byteData == seperator)
-    {
-      break;
+    while(true) {
+        var byteData = data[index + offset];
+        offset++;
+        if (byteData == seperator)
+            break;
+            
+        decodeResult = decodeResult + String.fromCharCode(byteData);
     }
-    decodeResult = decodeResult + String.fromCharCode(byteData);
-  }
-  newIndex = index;  
-  
-  return { result: decodeResult, currentIndex: newIndex };
+      
+    return { result: decodeResult, currentIndex: index + offset };
 }
 
 function logger(title, message) {
