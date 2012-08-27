@@ -38,6 +38,17 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 	},
 
 	addLayer: function (layer) {
+
+		if (layer instanceof L.LayerGroup)
+		{
+			for (var i in layer._layers) {
+				if (layer._layers.hasOwnProperty(i)) {
+					this.addLayer(layer._layers[i]);
+				}
+			}
+			return this;
+		}
+
 		if (!this._map) {
 			this._needsClustering.push(layer);
 			return this;
@@ -122,6 +133,9 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 	onRemove: function (map) {
 		this._map.off('zoomend', this._zoomEnd, this);
 		this._map.off('moveend', this._moveEnd, this);
+
+		//In case we are in a cluster animation
+		this._map._mapPane.className = this._map._mapPane.className.replace(' leaflet-cluster-anim', '');
 
 		if (this._spiderfierOnRemove) { //TODO FIXME: Not sure how to have spiderfier add something on here nicely
 			this._spiderfierOnRemove();
@@ -215,7 +229,9 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 	},
 
 	_zoomEnd: function () {
-
+		if (!this._map) { //May have been removed from the map by a zoomEnd handler
+			return;
+		}
 		this._mergeSplitClusters();
 
 		this._zoom = this._map._zoom;
@@ -416,7 +432,9 @@ L.MarkerClusterGroup.include(!L.DomUtil.TRANSITION ? {
 		this._inZoomAnimation++;
 	},
 	_animationEnd: function () {
-		this._map._mapPane.className = this._map._mapPane.className.replace(' leaflet-cluster-anim', '');
+		if (this._map) {
+			this._map._mapPane.className = this._map._mapPane.className.replace(' leaflet-cluster-anim', '');
+		}
 		this._inZoomAnimation--;
 	},
 	_animationZoomIn: function (previousZoomLevel, newZoomLevel) {
@@ -1126,7 +1144,9 @@ L.DistanceGrid.prototype = {
 	getNearObject: function (point) {
 		var x = this._getCoord(point.x),
 		    y = this._getCoord(point.y),
-		    i, j, k, row, cell, len, obj;
+		    i, j, k, row, cell, len, obj, dist,
+		    closestDistSq = this._sqCellSize,
+			closest = null;
 
 		for (i = y - 1; i <= y + 1; i++) {
 			row = this._grid[i];
@@ -1138,16 +1158,17 @@ L.DistanceGrid.prototype = {
 
 						for (k = 0, len = cell.length; k < len; k++) {
 							obj = cell[k];
-							if (this._sqDist(obj._dGridPoint, point) < this._sqCellSize) {
-								return obj;
+							dist = this._sqDist(obj._dGridPoint, point);
+							if (dist < closestDistSq) {
+								closestDistSq = dist;
+								closest = obj;
 							}
 						}
 					}
 				}
 			}
 		}
-
-		return null;
+		return closest;
 	},
 
 	_getCoord: function (x) {
@@ -1609,12 +1630,17 @@ L.MarkerClusterGroup.include({
 	_spiderfierOnRemove: function () {
 		this._map.off('click', this._unspiderfyWrapper, this);
 		this._map.off('zoomstart', this._unspiderfyZoomStart, this);
+		this._map.off('zoomanim', this._unspiderfyZoomAnim, this);
 	},
 
 
 	//On zoom start we add a zoomanim handler so that we are guaranteed to be last (after markers are animated)
 	//This means we can define the animation they do rather than Markers doing an animation to their actual location
 	_unspiderfyZoomStart: function () {
+		if (!this._map) { //May have been removed from the map by a zoomEnd handler
+			return;
+		}
+
 		this._map.on('zoomanim', this._unspiderfyZoomAnim, this);
 	},
 	_unspiderfyZoomAnim: function (zoomDetails) {
