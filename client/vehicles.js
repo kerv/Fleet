@@ -4,6 +4,25 @@ var m_markerDict = {};
 var m_markersLayer;
 var spinner;
 var m_requiresUpdate = false;
+
+var m_spinnerOptions = {
+  lines: 13, // The number of lines to draw
+  length: 10, // The length of each line
+  width: 5, // The line thickness
+  radius: 11, // The radius of the inner circle
+  corners: 1, // Corner roundness (0..1)
+  rotate: 0, // The rotation offset
+  color: '#000', // #rgb or #rrggbb
+  speed: 2, // Rounds per second
+  trail: 60, // Afterglow percentage
+  shadow: true, // Whether to render a shadow
+  hwaccel: false, // Whether to use hardware acceleration
+  className: 'spinner', // The CSS class to assign to the spinner
+  zIndex: 2e9, // The z-index (defaults to 2000000000)
+  top: 'auto', // Top position relative to parent in px
+  left: 'auto' // Left position relative to parent in px
+};
+
 // ID of currently selected list
 Session.set('vehicle_id', null);
 
@@ -30,22 +49,16 @@ Meteor.subscribe('vehicles', function () {
     var handle = allVehicles.observe({
       added: function (vehicle) { 
         var newMarker = L.marker(new L.LatLng(vehicle.lat, vehicle.lon));//.addTo(map);
-        
-        //m_markersLayer.addLayer(newMarker);
-        
+               
         newMarker.bindPopup("<b>" + vehicle.name + "<br\>" + vehicle.time + "</b>");
         m_markerDict[vehicle.name] = newMarker;   
         m_requiresUpdate = true;
         
        }, // run when vehicle is added
       changed: function (vehicle) { 
-      
-        //m_markersLayer.removeLayer(m_markerDict[vehicle.name]);
-        
-        var newMarker = L.marker(new L.LatLng(vehicle.lat, vehicle.lon));//.addTo(map);
-        
-        //m_markersLayer.addLayer(newMarker);
-        
+             
+        var newMarker = L.marker(new L.LatLng(vehicle.lat, vehicle.lon));//.addTo(map);        
+       
         newMarker.bindPopup("<b>" + vehicle.name + "<br\>" + vehicle.time + "</b>");
         m_markerDict[vehicle.name] = newMarker;   
         m_requiresUpdate = true;
@@ -120,24 +133,8 @@ Meteor.startup(function () {
     }
   });
  
-  var opts = {
-  lines: 13, // The number of lines to draw
-  length: 10, // The length of each line
-  width: 5, // The line thickness
-  radius: 11, // The radius of the inner circle
-  corners: 1, // Corner roundness (0..1)
-  rotate: 0, // The rotation offset
-  color: '#000', // #rgb or #rrggbb
-  speed: 2, // Rounds per second
-  trail: 60, // Afterglow percentage
-  shadow: true, // Whether to render a shadow
-  hwaccel: false, // Whether to use hardware acceleration
-  className: 'spinner', // The CSS class to assign to the spinner
-  zIndex: 2e9, // The z-index (defaults to 2000000000)
-  top: 'auto', // Top position relative to parent in px
-  left: 'auto' // Left position relative to parent in px
-  };
+
   var target = document.getElementById('map');
-  spinner = new Spinner(opts).spin(target);
+  spinner = new Spinner(m_spinnerOptions).spin(target);
 
 });
