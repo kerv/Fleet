@@ -3,6 +3,7 @@ var map;
 var m_markerDict = {};
 var m_markersLayer;
 var spinner;
+var m_requiresUpdate = false;
 // ID of currently selected list
 Session.set('vehicle_id', null);
 
@@ -29,18 +30,29 @@ Meteor.subscribe('vehicles', function () {
     var handle = allVehicles.observe({
       added: function (vehicle) { 
         var newMarker = L.marker(new L.LatLng(vehicle.lat, vehicle.lon));//.addTo(map);
-        m_markersLayer.addLayer(newMarker);
+        
+        //m_markersLayer.addLayer(newMarker);
+        
         newMarker.bindPopup("<b>" + vehicle.name + "<br\>" + vehicle.time + "</b>");
         m_markerDict[vehicle.name] = newMarker;   
+        m_requiresUpdate = true;
+        
        }, // run when vehicle is added
       changed: function (vehicle) { 
-        m_markerDict[vehicle.name].setLatLng(new L.LatLng(vehicle.lat, vehicle.lon));      
-        m_markerDict[vehicle.name].unbindPopup();
-        m_markerDict[vehicle.name].bindPopup("<b> U: " + vehicle.name + "<br\>" + vehicle.time + "</b>");
-        m_markerDict[vehicle.name].update();
+      
+        //m_markersLayer.removeLayer(m_markerDict[vehicle.name]);
+        
+        var newMarker = L.marker(new L.LatLng(vehicle.lat, vehicle.lon));//.addTo(map);
+        
+        //m_markersLayer.addLayer(newMarker);
+        
+        newMarker.bindPopup("<b>" + vehicle.name + "<br\>" + vehicle.time + "</b>");
+        m_markerDict[vehicle.name] = newMarker;   
+        m_requiresUpdate = true;
        }, // run when vehicle is changed
       removed: function (vehicle) { 
         //m_markerDict.remove(vehicle.name);
+        m_requiresUpdate = true;
        } // run when vehicle is removed
     });        
 });
@@ -50,6 +62,29 @@ Template.vehicles.vehicles = function () {
   return Vehicles.find({}, {sort: {name: 1}});
 };
 
+
+function refreshMapIfNeeded() {
+      if (m_requiresUpdate && map != null && m_markersLayer != null && m_markerDict != null)
+      {
+        console.log('Reloading clusters...');
+      
+        map.removeLayer(m_markersLayer);
+        
+        // initialize the markers layer
+        m_markersLayer = new L.MarkerClusterGroup({ spiderfyOnMaxZoom: true, showCoverageOnHover: false, zoomToBoundsOnClick: true });
+        
+        for(var networkID in m_markerDict) 
+        {
+            var vehicleMarker = m_markerDict[networkID];
+            m_markersLayer.addLayer(vehicleMarker);         
+        };
+        
+        map.addLayer(m_markersLayer);
+        
+        console.log('Reloading clusters DONE...');
+      
+      }
+}
 
 Meteor.startup(function () {
   //Backbone.history.start({pushState: true});
@@ -61,6 +96,29 @@ Meteor.startup(function () {
       maxZoom: 18
   }).addTo(map);  
 
+  var tid = setInterval(refreshMapIfNeeded, 10000);
+  
+  map.on('zoomend', function(e) {
+    if (m_requiresUpdate)
+    {
+      //map.removeLayer(m_markersLayer);
+      
+      //// initialize the markers layer
+      //m_markersLayer = new L.MarkerClusterGroup({ spiderfyOnMaxZoom: true, showCoverageOnHover: false, zoomToBoundsOnClick: true });
+      
+      //m_markerDict.forEach(function (vehicle) 
+      //{      
+      //    var newMarker = L.marker(new L.LatLng(vehicle.lat, vehicle.lon)); //.addTo(map);
+      //    m_markersLayer.addLayer(newMarker);
+      //    newMarker.bindPopup("<b>" + vehicle.name + "<br\>" + vehicle.time + "</b>");
+          
+      //    //m_markerDict[vehicle.name] = newMarker;
+      //});
+      
+      //map.addLayer(m_markersLayer);
+    
+    }
+  });
  
   var opts = {
   lines: 13, // The number of lines to draw
