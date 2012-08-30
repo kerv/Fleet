@@ -35,8 +35,9 @@ Meteor.subscribe('vehicles', function () {
     allVehicles.forEach(function (vehicle) 
     {      
         var newMarker = L.marker(new L.LatLng(vehicle.lat, vehicle.lon)); //.addTo(map);
+
+        newMarker.bindPopup("<b>" + vehicle.name + "<br\>" + vehicle.time + "</b><div style='clear: both'></div>");
         m_markersLayer.addLayer(newMarker);
-        newMarker.bindPopup("<b>" + vehicle.name + "<br\>" + vehicle.time + "</b>");
         
         m_markerDict[vehicle.name] = newMarker;
     });
