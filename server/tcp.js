@@ -55,16 +55,17 @@ var ETX = 0x03;
 var EOT = 0x04;
 var BBX = "BBX"; 
 
+var m_receiveBuffer = [];
+
 var socket = net.createConnection(port, host);
 logger('XGate'.info, 'Socket created.');
 
-socket.on('data', function(data) {
+socket.on('data', function(incomingData) {
 
   logger('XGate'.data, '\n--------------------------------------------------------------');    
   // Log the response from the server.
-  logger('XGate'.data, 'RESPONSE: ' + data);
-  
-  // TODO: data is an array - read stuff from it according to the XGate protocol spec
+  logger('XGate'.data, 'RESPONSE: ' + incomingData);
+    
     // <summary>
     // The XGateCom connect to XGateServer using a TcpAsyncSocket.
     // All communication to the XGateServer should use XGateCom class.
@@ -83,16 +84,35 @@ socket.on('data', function(data) {
     // The Length describes the total byte length from SOH to end of CRC.
     // </remarks>  
     
-    // TODO: Verify valid messages and throw them out if they are not valid
-    //var sohLengthSTX = data.Peek(SOH_LENGTH_STX_SIZE);
-    //if (sohLengthSTX == null)
-    //      return;
+    // Put all the incoming data into the buffer at the end
+    for(var i = 0; i < incomingData.length; i++)
+      m_receiveBuffer.push(incomingData[i]);
+    
+    //logger('XGate'.data, 'Size2: ' + m_receiveBuffer.length);
+    
+    while (m_receiveBuffer.length > 6)
+    {
+      // pull out one message worth of data to parse
+      var sizeResults = decodeNext(m_receiveBuffer, 1, STX);
+      var lengthOfMessage = sizeResults.result;
+      
+      //logger('XGate'.data, 'length: ' + lengthOfMessage);
+      
+      var data = [];
+      for (var x = 0; x < lengthOfMessage; x++)
+      {
+          data.push(m_receiveBuffer.shift());
+      }
+      //logger('XGate'.data, 'Size3: ' + m_receiveBuffer.length);
+      //logger('XGate'.data, 'RESPONSEd: ' + data);
+    
     
     var currentIndex = TAG_INDEX;
     var tagResults = decodeNext(data, currentIndex, ETX);
     var tag = tagResults.result;
     currentIndex = tagResults.currentIndex;
     logger('XGate'.data, 'TAG: ' +tag);
+    
     
     var typeResults = decodeNext(data, currentIndex, ETX);
     var type = typeResults.result;
@@ -123,7 +143,7 @@ socket.on('data', function(data) {
     var formSize = formSizeResults.result;
     currentIndex = formSizeResults.currentIndex;
     logger('XGate'.data, 'FORM SIZE: ' + formSize);    
-    
+
     var fields = [];
     for (var i = 0; i < formSize; i++)
     {
@@ -160,10 +180,13 @@ socket.on('data', function(data) {
           console.log('Inserted: ' + networkID);
         }
              
-      }).run();      
+      }
+              
+      ).run();      
 
     }
-  
+    
+    }  
 }).on('connect', function() {
     logger('XGate'.info, 'Connected to XGate server.');
 }).on('end', function() {
@@ -192,3 +215,4 @@ function logger(title, message) {
     }
     console.log(title + message);
 }
+
