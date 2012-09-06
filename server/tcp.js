@@ -87,105 +87,101 @@ socket.on('data', function(incomingData) {
     // Put all the incoming data into the buffer at the end
     for(var i = 0; i < incomingData.length; i++)
       m_receiveBuffer.push(incomingData[i]);
-    
-    //logger('XGate'.data, 'Size2: ' + m_receiveBuffer.length);
-    
-    while (m_receiveBuffer.length > 6)
+        
+    while (m_receiveBuffer.length > 7)
     {
       // pull out one message worth of data to parse
       var sizeResults = decodeNext(m_receiveBuffer, 1, STX);
       var lengthOfMessage = sizeResults.result;
-      
-      //logger('XGate'.data, 'length: ' + lengthOfMessage);
-      
+    
+            Fiber(function() {
+          
       var data = [];
       for (var x = 0; x < lengthOfMessage; x++)
       {
           data.push(m_receiveBuffer.shift());
-      }
-      //logger('XGate'.data, 'Size3: ' + m_receiveBuffer.length);
-      //logger('XGate'.data, 'RESPONSEd: ' + data);
+      }       
     
     
-    var currentIndex = TAG_INDEX;
-    var tagResults = decodeNext(data, currentIndex, ETX);
-    var tag = tagResults.result;
-    currentIndex = tagResults.currentIndex;
-    logger('XGate'.data, 'TAG: ' +tag);
     
-    
-    var typeResults = decodeNext(data, currentIndex, ETX);
-    var type = typeResults.result;
-    currentIndex = typeResults.currentIndex;
-    logger('XGate'.data, 'TYPE: ' + type);
-    
-    var statusResults = decodeNext(data, currentIndex, ETX);
-    var status = statusResults.result;
-    currentIndex = statusResults.currentIndex;
-    logger('XGate'.data, 'STATUS: ' + status);    
-    
-    var timeResults = decodeNext(data, currentIndex, ETX);
-    var time = timeResults.result;
-    currentIndex = timeResults.currentIndex;
-    logger('XGate'.data, 'TIME: ' + time);    
-    
-    var networkIDResults = decodeNext(data, currentIndex, ETX);
-    var networkID = networkIDResults.result;
-    currentIndex = networkIDResults.currentIndex;
-    logger('XGate'.data, 'NETWORKID: ' + networkID);    
-    
-    var formNumResults = decodeNext(data, currentIndex, ETX);
-    var formNum = formNumResults.result;
-    currentIndex = formNumResults.currentIndex;
-    logger('XGate'.data, 'FORM NUM: ' + formNum);    
-    
-    var formSizeResults = decodeNext(data, currentIndex, ETX);
-    var formSize = formSizeResults.result;
-    currentIndex = formSizeResults.currentIndex;
-    logger('XGate'.data, 'FORM SIZE: ' + formSize);    
-
-    var fields = [];
-    for (var i = 0; i < formSize; i++)
-    {
-      var fieldIndexResults = decodeNext(data, currentIndex, ETX);
-      var fieldIndex = fieldIndexResults.result;     
-      currentIndex = fieldIndexResults.currentIndex;
-      var fieldDataResults = decodeNext(data, currentIndex, ETX);
-      var fieldData = fieldDataResults.result;
-      currentIndex = fieldDataResults.currentIndex;
-      logger('XGate'.data, 'Field: ' + fieldIndex + ' Data: ' + fieldData);
+      var currentIndex = TAG_INDEX;
+      var tagResults = decodeNext(data, currentIndex, ETX);
+      var tag = tagResults.result;
+      currentIndex = tagResults.currentIndex;
+      logger('XGate'.data, 'TAG: ' +tag);      
       
-      fields[fieldIndex] = fieldData;
-    }
-   
-    // store vehicle location if it is available in the msg
-    if (type == BBX && fields[148] != null && fields[149] != null)
-    {
-      // remove any spaces between signs on the number
-      // + 51.5445 = +51.5445
-      // - 114.000 = -114.000
-      var lon = fields[148].replace(" ",""); 
-      var lat = fields[149].replace(" ",""); 
-    
-      Fiber(function() {
-        vehiclesMatched = Vehicles.findOne({name: networkID});
-        if (vehiclesMatched != null)
-        {
-          Vehicles.update(vehiclesMatched._id, {$set: {lon: parseFloat(lon), lat: parseFloat(lat), time: time}});      
-          console.log('Updated: ' + networkID );
-        }
-        else
-        {
-          Vehicles.insert({name: networkID, lon: parseFloat(lon), lat: parseFloat(lat), time: time});      
-          console.log('Inserted: ' + networkID);
-        }
-             
-      }
-              
-      ).run();      
+      var typeResults = decodeNext(data, currentIndex, ETX);
+      var type = typeResults.result;
+      currentIndex = typeResults.currentIndex;
+      logger('XGate'.data, 'TYPE: ' + type);
+      
+      var statusResults = decodeNext(data, currentIndex, ETX);
+      var status = statusResults.result;
+      currentIndex = statusResults.currentIndex;
+      logger('XGate'.data, 'STATUS: ' + status);    
+      
+      var timeResults = decodeNext(data, currentIndex, ETX);
+      var time = timeResults.result;
+      currentIndex = timeResults.currentIndex;
+      logger('XGate'.data, 'TIME: ' + time);    
+      
+      var networkIDResults = decodeNext(data, currentIndex, ETX);
+      var networkID = networkIDResults.result;
+      currentIndex = networkIDResults.currentIndex;
+      logger('XGate'.data, 'NETWORKID: ' + networkID);    
+      
+      var formNumResults = decodeNext(data, currentIndex, ETX);
+      var formNum = formNumResults.result;
+      currentIndex = formNumResults.currentIndex;
+      logger('XGate'.data, 'FORM NUM: ' + formNum);    
+      
+      var formSizeResults = decodeNext(data, currentIndex, ETX);
+      var formSize = formSizeResults.result;
+      currentIndex = formSizeResults.currentIndex;
+      logger('XGate'.data, 'FORM SIZE: ' + formSize);    
 
-    }
+      var fields = [];
+      for (var i = 0; i < formSize; i++)
+      {
+        var fieldIndexResults = decodeNext(data, currentIndex, ETX);
+        var fieldIndex = fieldIndexResults.result;     
+        currentIndex = fieldIndexResults.currentIndex;
+        var fieldDataResults = decodeNext(data, currentIndex, ETX);
+        var fieldData = fieldDataResults.result;
+        currentIndex = fieldDataResults.currentIndex;
+        logger('XGate'.data, 'Field: ' + fieldIndex + ' Data: ' + fieldData);
+        
+        fields[fieldIndex] = fieldData;
+      }
+     
+      // store vehicle location if it is available in the msg
+      if (type == BBX && fields[148] != null && fields[149] != null)
+      {
+        // remove any spaces between signs on the number
+        // + 51.5445 = +51.5445
+        // - 114.000 = -114.000
+        var lon = fields[148].replace(" ",""); 
+        var lat = fields[149].replace(" ",""); 
+      
+
+          vehiclesMatched = Vehicles.findOne({name: networkID});
+          if (vehiclesMatched != null)
+          {
+            Vehicles.update(vehiclesMatched._id, {$set: {lon: parseFloat(lon), lat: parseFloat(lat), time: time}});      
+            console.log('Updated: ' + networkID );
+          }
+          else
+          {
+            Vehicles.insert({name: networkID, lon: parseFloat(lon), lat: parseFloat(lat), time: time});      
+            console.log('Inserted: ' + networkID);
+          }
+               
+        }
+                
     
+      }
+        ).run();      
+
     }  
 }).on('connect', function() {
     logger('XGate'.info, 'Connected to XGate server.');
