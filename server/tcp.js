@@ -93,9 +93,10 @@ socket.on('data', function(incomingData) {
       // pull out one message worth of data to parse
       var sizeResults = decodeNext(m_receiveBuffer, 1, STX);
       var lengthOfMessage = sizeResults.result;
-    
-            Fiber(function() {
-          
+             
+      if (m_receiveBuffer.length < lengthOfMessage) // if we don't have enough, bail and wait for another message
+        break;
+             
       var data = [];
       for (var x = 0; x < lengthOfMessage; x++)
       {
@@ -103,7 +104,8 @@ socket.on('data', function(incomingData) {
       }       
     
     
-    
+      Fiber(function() {
+      
       var currentIndex = TAG_INDEX;
       var tagResults = decodeNext(data, currentIndex, ETX);
       var tag = tagResults.result;
@@ -164,6 +166,7 @@ socket.on('data', function(incomingData) {
         var lat = fields[149].replace(" ",""); 
       
 
+
           vehiclesMatched = Vehicles.findOne({name: networkID});
           if (vehiclesMatched != null)
           {
@@ -176,13 +179,16 @@ socket.on('data', function(incomingData) {
             console.log('Inserted: ' + networkID);
           }
                
-        }
-                
+   
     
       }
-        ).run();      
+                   }
+        ).run();    
 
     }  
+    
+    console.log('Total Length of Buffer: ' + m_receiveBuffer.length);
+    
 }).on('connect', function() {
     logger('XGate'.info, 'Connected to XGate server.');
 }).on('end', function() {
