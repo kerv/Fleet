@@ -115,6 +115,7 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 
 		if (layer._icon) {
 			L.FeatureGroup.prototype.removeLayer.call(this, layer);
+			layer.setOpacity(1);
 		}
 		return this;
 	},
@@ -452,7 +453,7 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 				if (closest.__parent) {
 					this._removeLayer(closest, false);
 				}
-				var parent = closest.__parent || this._topClusterLevel;
+				var parent = closest.__parent;
 
 				//Create new cluster with these 2 in it
 
@@ -483,6 +484,9 @@ L.MarkerClusterGroup = L.FeatureGroup.extend({
 			gridUnclustered[zoom].addObject(layer, markerPoint);
 		}
 
+		//Didn't get in anything, add us to the top
+		this._topClusterLevel._addChild(layer);
+		layer.__parent = this._topClusterLevel;
 		return;
 	},
 
@@ -621,6 +625,7 @@ L.MarkerClusterGroup.include(!L.DomUtil.TRANSITION ? {
 			//update the positions of the just added clusters/markers
 			me._topClusterLevel._recursively(bounds, previousZoomLevel, 0, function (c) {
 				L.FeatureGroup.prototype.removeLayer.call(me, c);
+				c.setOpacity(1);
 			});
 
 			me._animationEnd();
@@ -628,29 +633,39 @@ L.MarkerClusterGroup.include(!L.DomUtil.TRANSITION ? {
 	},
 
 	_animationZoomOut: function (previousZoomLevel, newZoomLevel) {
-		this._animationZoomOutSingle(this._topClusterLevel, previousZoomLevel, newZoomLevel);
+		this._animationZoomOutSingle(this._topClusterLevel, previousZoomLevel - 1, newZoomLevel);
 
 		//Need to add markers for those that weren't on the map before but are now
 		this._topClusterLevel._recursivelyAddChildrenToMap(null, newZoomLevel, this._getExpandedVisibleBounds());
 	},
-	_animationZoomOutSingle: function (marker, previousZoomLevel, newZoomLevel) {
+	_animationZoomOutSingle: function (cluster, previousZoomLevel, newZoomLevel) {
 		var bounds = this._getExpandedVisibleBounds();
 
 		//Animate all of the markers in the clusters to move to their cluster center point
-		marker._recursivelyAnimateChildrenInAndAddSelfToMap(bounds, previousZoomLevel, newZoomLevel);
+		cluster._recursivelyAnimateChildrenInAndAddSelfToMap(bounds, previousZoomLevel + 1, newZoomLevel);
 
 		var me = this;
 
 		//Update the opacity (If we immediately set it they won't animate)
 		this._forceLayout();
-		marker._recursivelyBecomeVisible(bounds, newZoomLevel);
+		cluster._recursivelyBecomeVisible(bounds, newZoomLevel);
 
 		//TODO: Maybe use the transition timing stuff to make this more reliable
 		//When the animations are done, tidy up
 		setTimeout(function () {
 
-			marker._recursively(bounds, newZoomLevel, 0, function (c) {
-				c._recursivelyRemoveChildrenFromMap(bounds, previousZoomLevel);
+			//This cluster stopped being a cluster before the timeout fired
+			if (cluster._childCount === 1) {
+				var m = cluster._markers[0];
+				//If we were in a cluster animation at the time then the opacity and position of our child could be wrong now, so fix it
+				m.setLatLng(m.getLatLng());
+				m.setOpacity(1);
+
+				return;
+			}
+
+			cluster._recursively(bounds, newZoomLevel, 0, function (c) {
+				c._recursivelyRemoveChildrenFromMap(bounds, previousZoomLevel + 1);
 			});
 			me._animationEnd();
 		}, 250);
@@ -828,8 +843,8 @@ L.MarkerCluster = L.Marker.extend({
 		L.FeatureGroup.prototype.addLayer.call(this._group, this);
 	},
 	
-	_recursivelyAnimateChildrenIn: function (bounds, center, depth) {
-		this._recursively(bounds, 0, depth - 1,
+	_recursivelyAnimateChildrenIn: function (bounds, center, maxZoom) {
+		this._recursively(bounds, 0, maxZoom - 1,
 			function (c) {
 				var markers = c._markers,
 					i, m;
@@ -883,7 +898,7 @@ L.MarkerCluster = L.Marker.extend({
 	},
 
 	_recursivelyAddChildrenToMap: function (startPos, zoomLevel, bounds) {
-		this._recursively(bounds, 0, zoomLevel,
+		this._recursively(bounds, -1, zoomLevel,
 			function (c) {
 				if (zoomLevel === c._zoom) {
 					return;
