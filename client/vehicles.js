@@ -5,6 +5,7 @@ var m_markersLayer;
 var spinner;
 var m_requiresUpdate = false;
 
+
 var m_spinnerOptions = {
   lines: 13, // The number of lines to draw
   length: 10, // The length of each line
@@ -30,43 +31,62 @@ Meteor.subscribe('vehicles', function () {
       
     // initialize the markers layer
     m_markersLayer = new L.MarkerClusterGroup({ spiderfyOnMaxZoom: true, showCoverageOnHover: false, zoomToBoundsOnClick: true });
-
+ 
+    
     var allVehicles = Vehicles.find();
     allVehicles.forEach(function (vehicle) 
     {      
         var newMarker = L.marker(new L.LatLng(vehicle.lat, vehicle.lon)); //.addTo(map);
 
         newMarker.bindPopup("<b>" + vehicle.name + "<br\>" + vehicle.time + "</b><div style='clear: both'></div>");
-        m_markersLayer.addLayer(newMarker);
-        
+        m_markersLayer.addLayer(newMarker);        
+
         m_markerDict[vehicle.name] = newMarker;
     });
 
-    
     map.addLayer(m_markersLayer);
 
     spinner.stop();
              
     var handle = allVehicles.observe({
-      added: function (vehicle) { 
+      added: function (vehicle) { /*
+      
         var newMarker = L.marker(new L.LatLng(vehicle.lat, vehicle.lon));//.addTo(map);
                
         newMarker.bindPopup("<b>" + vehicle.name + "<br\>" + vehicle.time + "</b>");
-        m_markerDict[vehicle.name] = newMarker;   
-        m_requiresUpdate = true;
-        
+
+        m_requiresUpdate = false;
+        m_markersLayer.addLayer(newMarker);        
+
+        m_markerDict[vehicle.name] = newMarker;
+        */
        }, // run when vehicle is added
       changed: function (vehicle) { 
+        
+        var changedMarker = m_markerDict[vehicle.name];
+        // remove old marker
+        if (m_markersLayer.hasLayer(changedMarker))
+        {
+          //console.log('Removing marker: ' + vehicle.name);
+          m_markersLayer.removeLayer(changedMarker);
+
              
-        var newMarker = L.marker(new L.LatLng(vehicle.lat, vehicle.lon));//.addTo(map);        
-       
-        newMarker.bindPopup("<b>" + vehicle.name + "<br\>" + vehicle.time + "</b>");
-        m_markerDict[vehicle.name] = newMarker;   
-        m_requiresUpdate = true;
+          changedMarker = L.marker(new L.LatLng(vehicle.lat, vehicle.lon));//.addTo(map);        
+         
+          changedMarker.bindPopup("<b>" + vehicle.name + "<br\>" + vehicle.time + "</b>");
+          m_markerDict[vehicle.name] = changedMarker;   
+          
+          m_markersLayer.addLayer(changedMarker);
+
+          m_requiresUpdate = false;
+        }
        }, // run when vehicle is changed
       removed: function (vehicle) { 
-        //m_markerDict.remove(vehicle.name);
-        m_requiresUpdate = true;
+       
+        // remove old marker
+        m_markersLayer.removeLayer(m_markerDict[vehicle.name]);
+        
+        m_requiresUpdate = false;
        } // run when vehicle is removed
     });        
 });
@@ -78,6 +98,7 @@ Template.vehicles.vehicles = function () {
 
 
 function refreshMapIfNeeded() {
+/*
       if (m_requiresUpdate && map != null && m_markersLayer != null && m_markerDict != null)
       {
         console.log('Reloading clusters...');
@@ -97,7 +118,7 @@ function refreshMapIfNeeded() {
         
         console.log('Reloading clusters DONE...');
       
-      }
+      }*/
 }
 
 Meteor.startup(function () {

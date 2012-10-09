@@ -3,7 +3,7 @@ var require = __meteor_bootstrap__.require,
     colors = require('colors'),
     //port = 2001,
     //host = "172.23.45.67";
-    port = 2002,
+    port = 3002,
     host = "172.23.45.16";
 
 colors.setTheme({
