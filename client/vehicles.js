@@ -30,7 +30,7 @@ Session.set('vehicle_id', null);
 Meteor.subscribe('vehicles', function () {
       
     // initialize the markers layer
-    m_markersLayer = new L.MarkerClusterGroup({ spiderfyOnMaxZoom: true, showCoverageOnHover: false, zoomToBoundsOnClick: true });
+    m_markersLayer = new L.MarkerClusterGroup({ spiderfyOnMaxZoom: true, showCoverageOnHover: true, zoomToBoundsOnClick: true });
  
     
     var allVehicles = Vehicles.find();
