@@ -1,9 +1,7 @@
-# Fleet running on Meteor
+Fleet running on Meteor
 
-### Additional Node Packages
+### Additional Node Packages Required
 * colors
 * node-sqlserver
 
-### Contributors
-* kerv (kerv)
-* rpwjanzen (Ryan Janzen)
+Uses Meteor, Leaflet with Clustering and a little bit of (magic) propriatory communication code. (Cannot share this)
